@@ -8,6 +8,8 @@ import suppressionsRouter from "./suppressions";
 import statsRouter from "./stats";
 import activityRouter from "./activity";
 import settingsRouter from "./settings";
+import apiKeysRouter from "./api-keys";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -20,5 +22,7 @@ router.use(suppressionsRouter);
 router.use(statsRouter);
 router.use(activityRouter);
 router.use(settingsRouter);
+router.use(apiKeysRouter);
+router.use(adminRouter);
 
 export default router;
