@@ -5,7 +5,11 @@
  * Postmaster email platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { Email } from './email';
 
-export interface HealthStatus {
-  status: string;
+export interface EmailList {
+  emails: Email[];
+  total: number;
+  page: number;
+  limit: number;
 }

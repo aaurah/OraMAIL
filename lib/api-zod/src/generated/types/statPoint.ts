@@ -6,6 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface StatPoint {
+  date: string;
+  sent: number;
+  delivered: number;
+  bounced: number;
+  opened: number;
+  clicked: number;
 }

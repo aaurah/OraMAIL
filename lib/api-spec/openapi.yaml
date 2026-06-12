@@ -3,13 +3,28 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Postmaster email platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: emails
+    description: Outbound email operations
+  - name: inbound
+    description: Inbound email operations
+  - name: templates
+    description: Email template operations
+  - name: domains
+    description: Domain and sender signature operations
+  - name: stats
+    description: Email statistics and analytics
+  - name: suppressions
+    description: Suppression list operations
+  - name: activity
+    description: Activity feed operations
+
 paths:
   /healthz:
     get:
@@ -24,6 +39,432 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── OUTBOUND EMAILS ─────────────────────────────────────────────────────────
+  /emails:
+    get:
+      operationId: listEmails
+      tags: [emails]
+      summary: List sent emails
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: status
+          in: query
+          schema: { type: string, enum: [sent, bounced, opened, clicked, spam, unsubscribed] }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of emails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailList"
+    post:
+      operationId: sendEmail
+      tags: [emails]
+      summary: Send an email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailInput"
+      responses:
+        "201":
+          description: Email queued for sending
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Email"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /emails/{id}:
+    get:
+      operationId: getEmail
+      tags: [emails]
+      summary: Get email details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Email details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Email"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── INBOUND EMAILS ───────────────────────────────────────────────────────────
+  /inbound:
+    get:
+      operationId: listInbound
+      tags: [inbound]
+      summary: List received emails
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of received emails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InboundList"
+
+  /inbound/{id}:
+    get:
+      operationId: getInbound
+      tags: [inbound]
+      summary: Get received email details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Inbound email details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InboundEmail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /inbound/webhook:
+    post:
+      operationId: inboundWebhook
+      tags: [inbound]
+      summary: Postmark inbound webhook receiver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InboundWebhookPayload"
+      responses:
+        "200":
+          description: Webhook received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── TEMPLATES ────────────────────────────────────────────────────────────────
+  /templates:
+    get:
+      operationId: listTemplates
+      tags: [templates]
+      summary: List email templates
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Template"
+    post:
+      operationId: createTemplate
+      tags: [templates]
+      summary: Create a template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateInput"
+      responses:
+        "201":
+          description: Created template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+
+  /templates/{id}:
+    get:
+      operationId: getTemplate
+      tags: [templates]
+      summary: Get template details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Template details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+    patch:
+      operationId: updateTemplate
+      tags: [templates]
+      summary: Update a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateUpdate"
+      responses:
+        "200":
+          description: Updated template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+    delete:
+      operationId: deleteTemplate
+      tags: [templates]
+      summary: Delete a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── DOMAINS ──────────────────────────────────────────────────────────────────
+  /domains:
+    get:
+      operationId: listDomains
+      tags: [domains]
+      summary: List sender domains
+      responses:
+        "200":
+          description: List of domains
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Domain"
+    post:
+      operationId: createDomain
+      tags: [domains]
+      summary: Add a sender domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DomainInput"
+      responses:
+        "201":
+          description: Created domain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Domain"
+
+  /domains/{id}:
+    get:
+      operationId: getDomain
+      tags: [domains]
+      summary: Get domain details and DNS records
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Domain details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Domain"
+    delete:
+      operationId: deleteDomain
+      tags: [domains]
+      summary: Remove a domain
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  /domains/{id}/verify:
+    post:
+      operationId: verifyDomain
+      tags: [domains]
+      summary: Trigger DNS verification for a domain
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Domain"
+
+  # ── STATS ────────────────────────────────────────────────────────────────────
+  /stats/overview:
+    get:
+      operationId: getStatsOverview
+      tags: [stats]
+      summary: Dashboard overview stats
+      responses:
+        "200":
+          description: Overview statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsOverview"
+
+  /stats/delivery:
+    get:
+      operationId: getDeliveryStats
+      tags: [stats]
+      summary: Delivery rate stats over time
+      parameters:
+        - name: days
+          in: query
+          schema: { type: integer, default: 30 }
+      responses:
+        "200":
+          description: Delivery stats series
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatPoint"
+
+  /stats/bounces:
+    get:
+      operationId: getBounceStats
+      tags: [stats]
+      summary: Bounce breakdown stats
+      responses:
+        "200":
+          description: Bounce stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BounceStats"
+
+  # ── SUPPRESSIONS ─────────────────────────────────────────────────────────────
+  /suppressions:
+    get:
+      operationId: listSuppressions
+      tags: [suppressions]
+      summary: List suppressed addresses
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: List of suppressions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuppressionList"
+    post:
+      operationId: addSuppression
+      tags: [suppressions]
+      summary: Add an address to the suppression list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuppressionInput"
+      responses:
+        "201":
+          description: Suppression added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Suppression"
+
+  /suppressions/{id}:
+    delete:
+      operationId: deleteSuppression
+      tags: [suppressions]
+      summary: Remove an address from the suppression list
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Removed
+
+  # ── ACTIVITY ─────────────────────────────────────────────────────────────────
+  /activity:
+    get:
+      operationId: getActivity
+      tags: [activity]
+      summary: Recent email activity feed
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: Activity events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityEvent"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +472,229 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    # ── EMAIL SCHEMAS ───────────────────────────────────────────────────────────
+    Email:
+      type: object
+      required: [id, from, to, subject, status, createdAt]
+      properties:
+        id:           { type: integer }
+        from:         { type: string }
+        to:           { type: string }
+        subject:      { type: string }
+        htmlBody:     { type: ["string", "null"] }
+        textBody:     { type: ["string", "null"] }
+        status:       { type: string, enum: [queued, sent, bounced, opened, clicked, spam, unsubscribed] }
+        opens:        { type: integer }
+        clicks:       { type: integer }
+        messageId:    { type: ["string", "null"] }
+        templateId:   { type: ["integer", "null"] }
+        tag:          { type: ["string", "null"] }
+        createdAt:    { type: string, format: date-time }
+        sentAt:       { type: ["string", "null"], format: date-time }
+
+    EmailInput:
+      type: object
+      required: [from, to, subject]
+      properties:
+        from:       { type: string }
+        to:         { type: string }
+        subject:    { type: string }
+        htmlBody:   { type: string }
+        textBody:   { type: string }
+        templateId: { type: integer }
+        tag:        { type: string }
+        trackOpens: { type: boolean, default: true }
+        trackLinks: { type: boolean, default: true }
+
+    EmailList:
+      type: object
+      required: [emails, total, page, limit]
+      properties:
+        emails:
+          type: array
+          items:
+            $ref: "#/components/schemas/Email"
+        total:  { type: integer }
+        page:   { type: integer }
+        limit:  { type: integer }
+
+    # ── INBOUND EMAIL SCHEMAS ───────────────────────────────────────────────────
+    InboundEmail:
+      type: object
+      required: [id, from, to, subject, receivedAt]
+      properties:
+        id:           { type: integer }
+        from:         { type: string }
+        to:           { type: string }
+        subject:      { type: string }
+        htmlBody:     { type: ["string", "null"] }
+        textBody:     { type: ["string", "null"] }
+        headers:      { type: ["string", "null"] }
+        attachments:  { type: integer }
+        receivedAt:   { type: string, format: date-time }
+
+    InboundList:
+      type: object
+      required: [emails, total, page, limit]
+      properties:
+        emails:
+          type: array
+          items:
+            $ref: "#/components/schemas/InboundEmail"
+        total:  { type: integer }
+        page:   { type: integer }
+        limit:  { type: integer }
+
+    InboundWebhookPayload:
+      type: object
+      properties:
+        From:     { type: string }
+        To:       { type: string }
+        Subject:  { type: string }
+        HtmlBody: { type: string }
+        TextBody: { type: string }
+        Headers:  { type: string }
+        Attachments:
+          type: array
+          items:
+            type: object
+
+    # ── TEMPLATE SCHEMAS ────────────────────────────────────────────────────────
+    Template:
+      type: object
+      required: [id, name, subject, createdAt]
+      properties:
+        id:          { type: integer }
+        name:        { type: string }
+        subject:     { type: string }
+        htmlBody:    { type: ["string", "null"] }
+        textBody:    { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        usageCount:  { type: integer }
+        createdAt:   { type: string, format: date-time }
+        updatedAt:   { type: string, format: date-time }
+
+    TemplateInput:
+      type: object
+      required: [name, subject]
+      properties:
+        name:        { type: string }
+        subject:     { type: string }
+        htmlBody:    { type: string }
+        textBody:    { type: string }
+        description: { type: string }
+
+    TemplateUpdate:
+      type: object
+      properties:
+        name:        { type: string }
+        subject:     { type: string }
+        htmlBody:    { type: string }
+        textBody:    { type: string }
+        description: { type: string }
+
+    # ── DOMAIN SCHEMAS ──────────────────────────────────────────────────────────
+    Domain:
+      type: object
+      required: [id, domain, status, createdAt]
+      properties:
+        id:           { type: integer }
+        domain:       { type: string }
+        status:       { type: string, enum: [unverified, pending, verified, failed] }
+        spfVerified:  { type: boolean }
+        dkimVerified: { type: boolean }
+        dmarcRecord:  { type: ["string", "null"] }
+        returnPath:   { type: ["string", "null"] }
+        createdAt:    { type: string, format: date-time }
+
+    DomainInput:
+      type: object
+      required: [domain]
+      properties:
+        domain: { type: string }
+
+    # ── STATS SCHEMAS ───────────────────────────────────────────────────────────
+    StatsOverview:
+      type: object
+      required: [totalSent, delivered, bounced, opened, clicked, spamComplaints, inboundReceived, deliveryRate, openRate, clickRate]
+      properties:
+        totalSent:        { type: integer }
+        delivered:        { type: integer }
+        bounced:          { type: integer }
+        opened:           { type: integer }
+        clicked:          { type: integer }
+        spamComplaints:   { type: integer }
+        inboundReceived:  { type: integer }
+        deliveryRate:     { type: number }
+        openRate:         { type: number }
+        clickRate:        { type: number }
+
+    StatPoint:
+      type: object
+      required: [date, sent, delivered, bounced, opened, clicked]
+      properties:
+        date:       { type: string }
+        sent:       { type: integer }
+        delivered:  { type: integer }
+        bounced:    { type: integer }
+        opened:     { type: integer }
+        clicked:    { type: integer }
+
+    BounceStats:
+      type: object
+      required: [hardBounces, softBounces, spamComplaints, unsubscribes]
+      properties:
+        hardBounces:     { type: integer }
+        softBounces:     { type: integer }
+        spamComplaints:  { type: integer }
+        unsubscribes:    { type: integer }
+
+    # ── SUPPRESSION SCHEMAS ─────────────────────────────────────────────────────
+    Suppression:
+      type: object
+      required: [id, email, reason, createdAt]
+      properties:
+        id:        { type: integer }
+        email:     { type: string }
+        reason:    { type: string, enum: [bounce, spam, unsubscribe, manual] }
+        createdAt: { type: string, format: date-time }
+
+    SuppressionInput:
+      type: object
+      required: [email, reason]
+      properties:
+        email:  { type: string }
+        reason: { type: string, enum: [bounce, spam, unsubscribe, manual] }
+
+    SuppressionList:
+      type: object
+      required: [suppressions, total, page, limit]
+      properties:
+        suppressions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Suppression"
+        total:  { type: integer }
+        page:   { type: integer }
+        limit:  { type: integer }
+
+    # ── ACTIVITY SCHEMAS ────────────────────────────────────────────────────────
+    ActivityEvent:
+      type: object
+      required: [id, type, email, description, createdAt]
+      properties:
+        id:          { type: integer }
+        type:        { type: string, enum: [sent, delivered, bounced, opened, clicked, spam, unsubscribed, inbound] }
+        email:       { type: string }
+        subject:     { type: ["string", "null"] }
+        description: { type: string }
+        createdAt:   { type: string, format: date-time }
