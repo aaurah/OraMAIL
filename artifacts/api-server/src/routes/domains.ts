@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { domainsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { CreateDomainBody, GetDomainParams, DeleteDomainParams, VerifyDomainParams } from "@workspace/api-zod";
-import { getPostmarkClient, isPostmarkConfigured } from "../lib/postmark";
+import { getEmailClient, isEmailConfigured } from "../lib/postmark";
 
 const router = Router();
 
@@ -58,9 +58,9 @@ router.post("/domains/:id/verify", async (req, res) => {
   let dkimVerified = domain.dkimVerified;
   let status: "pending" | "verified" | "failed" = "pending";
 
-  if (isPostmarkConfigured()) {
+  if (isEmailConfigured()) {
     try {
-      const client = getPostmarkClient();
+      const client = getEmailClient();
       const result = await (client as unknown as { getDomainSignatures: (opts: { Count: number; Offset: number }) => Promise<{ DomainSignatures: Array<{ Name: string; SPFVerified: boolean; DKIMVerified: boolean }> }> }).getDomainSignatures({ Count: 100, Offset: 0 });
       const found = result?.DomainSignatures?.find((d) => d.Name === domain.domain);
       if (found) {

@@ -166,7 +166,7 @@ paths:
     post:
       operationId: inboundWebhook
       tags: [inbound]
-      summary: Postmark inbound webhook receiver
+      summary: OraMAIL inbound webhook receiver
       requestBody:
         required: true
         content:

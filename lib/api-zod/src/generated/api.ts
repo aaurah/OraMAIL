@@ -148,7 +148,7 @@ export const GetInboundResponse = zod.object({
 
 
 /**
- * @summary Postmark inbound webhook receiver
+ * @summary OraMAIL inbound webhook receiver
  */
 export const InboundWebhookBody = zod.object({
   "From": zod.string().optional(),
