@@ -73,7 +73,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground group-hover:bg-primary/90 transition-colors">
               <Command className="h-5 w-5" />
             </div>
-            <span className="font-semibold text-sidebar-foreground tracking-tight">Postmaster</span>
+            <span className="font-semibold text-sidebar-foreground tracking-tight">OraMAIL</span>
           </Link>
         </div>
 
