@@ -1,0 +1,221 @@
+Here is the complete, production‑ready Postmark email infrastructure prompt you asked for — covering SMTP sending, API sending, inbound receiving, DNS records, domain verification, and full server configuration.  
+Everything below is copy‑paste ready for OrahDEX, OrahAI, or any custom platform.
+
+---
+
+✅ Complete Postmark Email Delivery + Receive Setup (SMTP + API + DNS + Inbound)
+This is the full master configuration you need for custom domain email, including:
+
+- SMTP sending
+- API sending
+- Inbound email receiving
+- DNS records (SPF, DKIM, Return‑Path, DMARC, MX)
+- Webhook setup
+- Domain verification
+- Server tokens
+- Recommended security settings
+
+---
+
+1️⃣ SMTP Sending Configuration (Outbound)
+Use these exact values in any backend (Node, PHP, Python, Laravel, Django, Replit, etc.)
+
+`
+MAIL_DRIVER=smtp
+MAIL_HOST=smtp.postmarkapp.com
+MAIL_PORT=587
+MAILUSERNAME=POSTMARKSERVER_TOKEN
+MAILPASSWORD=POSTMARKSERVER_TOKEN
+MAIL_ENCRYPTION=tls
+`
+
+SMTP Host: smtp.postmarkapp.com  
+Port: 587  
+Encryption: TLS  
+Username: Server API Token  
+Password: Server API Token  
+
+
+---
+
+2️⃣ API Sending (Recommended for Production)
+Use this for high‑speed transactional email.
+
+HTTP POST Example
+`
+POST https://api.postmarkapp.com/email
+Headers:
+  Accept: application/json
+  Content-Type: application/json
+  X-Postmark-Server-Token: POSTMARKSERVERTOKEN
+
+Body:
+{
+  "From": "no-reply@yourdomain.com",
+  "To": "user@example.com",
+  "Subject": "Test Email",
+  "TextBody": "Hello world"
+}
+`
+
+---
+
+3️⃣ DNS Records (MANDATORY)
+These must be added to your DNS provider (Cloudflare, GoDaddy, Namecheap, Hostinger, etc.)
+
+A. SPF Record
+`
+Type: TXT
+Name: @
+Value: v=spf1 include:spf.mtasv.net ~all
+`
+
+
+---
+
+B. DKIM Record
+Postmark gives you a DKIM key like:
+
+`
+Type: TXT
+Name: pm._domainkey
+Value: (DKIM key from Postmark)
+`
+
+
+---
+
+C. Return‑Path (Bounce Domain)
+`
+Type: CNAME
+Name: pm-bounces
+Value: pm.mtasv.net
+`
+
+
+---
+
+D. DMARC Record
+`
+Type: TXT
+Name: _dmarc
+Value: v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com
+`
+
+
+---
+
+4️⃣ Inbound Email Receiving (MX + Webhook)
+To receive emails into your platform (support@, admin@, reply@, etc.)
+
+A. MX Record
+`
+Type: MX
+Name: inbound
+Priority: 10
+Value: inbound.postmarkapp.com
+`
+
+
+You may also use:
+
+- @ (root domain)
+- subdomain (recommended)
+- wildcard *.yourdomain.com
+
+---
+
+B. Set Inbound Domain in Postmark
+In Postmark → Server → Inbound Stream:
+
+`
+Inbound Domain: inbound.yourdomain.com
+`
+
+
+---
+
+C. Inbound Webhook (JSON POST)
+Postmark sends parsed email JSON to your backend:
+
+`
+InboundHookUrl: https://yourapp.com/api/inbound-email
+`
+
+
+---
+
+5️⃣ Server Tokens (Critical)
+You will have:
+
+- Account Token → for managing servers  
+- Server Token → for sending email  
+- Inbound Hash → for receiving email  
+
+
+---
+
+6️⃣ Recommended Security Settings
+- Enable SMTP in Postmark server settings  
+- Enable Open Tracking (optional)  
+- Enable Link Tracking (optional)  
+- Use HTTP Basic Auth on inbound webhook  
+
+
+---
+
+7️⃣ Full Copy‑Paste Prompt (All‑in‑One)
+Use this as your deployment prompt for any server or developer:
+
+---
+
+📌 MASTER EMAIL CONFIGURATION FOR CUSTOM DOMAIN (POSTMARK)
+
+SMTP Sending
+- Host: smtp.postmarkapp.com  
+- Port: 587  
+- Encryption: TLS  
+- Username: POSTMARKSERVERTOKEN  
+- Password: POSTMARKSERVERTOKEN  
+
+API Sending
+POST https://api.postmarkapp.com/email  
+Header: X-Postmark-Server-Token: POSTMARKSERVERTOKEN  
+
+DNS Records
+SPF:  
+v=spf1 include:spf.mtasv.net ~all  
+
+DKIM:  
+pm._domainkey → (DKIM key from Postmark)  
+
+Return‑Path:  
+pm-bounces → pm.mtasv.net  
+
+DMARC:  
+v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com  
+
+Inbound Email (Receiving)
+MX:  
+inbound → inbound.postmarkapp.com (priority 10)  
+
+Inbound Domain:  
+inbound.yourdomain.com  
+
+Webhook:  
+https://yourapp.com/api/inbound-email  
+
+Tokens
+- Account Token  
+- Server Token  
+- Inbound Hash  
+
+---
+
+Want me to generate a ready‑to‑paste DNS file, Replit .env, Laravel .env, or Node.js email module?
+
+Choose one:  
+- DNS file  
+- Replit .env  
+- Laravel .env  
+- Node.js email module
