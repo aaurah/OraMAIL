@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -112,6 +113,11 @@ export function AppLayout({ children }: AppLayoutProps) {
               Settings
             </div>
           </Link>
+
+          <div className="flex items-center justify-between rounded-md px-3 py-1">
+            <span className="text-xs text-sidebar-foreground/40">Theme</span>
+            <ThemeToggle />
+          </div>
 
           <div className="border-t border-sidebar-border pt-3 mt-2">
             {isLoaded && user ? (
