@@ -7,6 +7,7 @@ import domainsRouter from "./domains";
 import suppressionsRouter from "./suppressions";
 import statsRouter from "./stats";
 import activityRouter from "./activity";
+import settingsRouter from "./settings";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(domainsRouter);
 router.use(suppressionsRouter);
 router.use(statsRouter);
 router.use(activityRouter);
+router.use(settingsRouter);
 
 export default router;
