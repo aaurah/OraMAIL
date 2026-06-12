@@ -539,7 +539,7 @@ export const getInboundWebhookUrl = () => {
 }
 
 /**
- * @summary Postmark inbound webhook receiver
+ * @summary OraMAIL inbound webhook receiver
  */
 export const inboundWebhook = async (inboundWebhookPayload: InboundWebhookPayload, options?: RequestInit): Promise<HealthStatus> => {
 
@@ -588,7 +588,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type InboundWebhookMutationError = ErrorType<unknown>
 
     /**
- * @summary Postmark inbound webhook receiver
+ * @summary OraMAIL inbound webhook receiver
  */
 export const useInboundWebhook = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inboundWebhook>>, TError,{data: BodyType<InboundWebhookPayload>}, TContext>, request?: SecondParameter<typeof customFetch>}

@@ -34,7 +34,7 @@ interface SettingsData {
     note: string;
   };
   server: {
-    postmarkTokenConfigured: boolean;
+    tokenConfigured: boolean;
   };
 }
 
@@ -91,7 +91,7 @@ export default function Settings() {
             <Server className="h-5 w-5 text-muted-foreground" />
             <CardTitle className="text-base">Server Status</CardTitle>
           </div>
-          <CardDescription>Postmark API connection status.</CardDescription>
+          <CardDescription>OraMAIL API connection status.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (
@@ -101,15 +101,15 @@ export default function Settings() {
               <div className="flex items-center gap-3">
                 <div className={`h-2 w-2 rounded-full ${data?.server.postmarkTokenConfigured ? "bg-green-500" : "bg-amber-500"}`} />
                 <div>
-                  <p className="text-sm font-medium">Postmark Server Token</p>
+                  <p className="text-sm font-medium">OraMAIL API Token</p>
                   <p className="text-xs text-muted-foreground">
-                    {data?.server.postmarkTokenConfigured
-                      ? "Connected — emails will be sent via Postmark"
+                    {data?.server.tokenConfigured
+                      ? "Connected — emails will be sent via OraMAIL"
                       : "Not configured — emails are queued but not sent"}
                   </p>
                 </div>
               </div>
-              {data?.server.postmarkTokenConfigured ? (
+              {data?.server.tokenConfigured ? (
                 <Badge variant="outline" className="border-green-500/30 text-green-600 bg-green-500/10">
                   <CheckCircle2 className="h-3 w-3 mr-1" /> Active
                 </Badge>
@@ -120,9 +120,9 @@ export default function Settings() {
               )}
             </div>
           )}
-          {!isLoading && !data?.server.postmarkTokenConfigured && (
+          {!isLoading && !data?.server.tokenConfigured && (
             <div className="rounded-md border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
-              Add your <span className="font-mono font-semibold">POSTMARK_SERVER_TOKEN</span> secret to enable live email sending. Get it from your Postmark dashboard → Server → API Tokens.
+              Add your <span className="font-mono font-semibold">ORAMAIL_API_TOKEN</span> secret to enable live email sending. Get it from your OraMAIL dashboard → Server → API Tokens.
             </div>
           )}
         </CardContent>
@@ -137,7 +137,7 @@ export default function Settings() {
           </div>
           <CardDescription>
             Use these credentials to send email via SMTP from your application or email client.
-            Your Postmark Server Token is used as both the SMTP username and password.
+            Your OraMAIL API token is used as both the SMTP username and password.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -156,7 +156,7 @@ export default function Settings() {
               ) : (
                 <div className="flex items-center gap-2 rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground">
                   <Lock className="h-4 w-4 shrink-0" />
-                  SMTP credentials will appear here once your Postmark Server Token is configured.
+                  SMTP credentials will appear here once your OraMAIL API token is configured.
                 </div>
               )}
               <Separator />
@@ -174,7 +174,7 @@ export default function Settings() {
             <CardTitle className="text-base">Inbound Webhook</CardTitle>
           </div>
           <CardDescription>
-            Configure this URL in Postmark to receive inbound emails into your dashboard.
+            Configure this URL in OraMAIL to receive inbound emails into your dashboard.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -186,10 +186,10 @@ export default function Settings() {
           <div className="rounded-md border bg-muted/30 p-4 space-y-3 text-sm">
             <p className="font-medium flex items-center gap-2"><Settings2 className="h-4 w-4" /> Setup Instructions</p>
             <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground ml-1">
-              <li>Log in to your Postmark account and open your Server.</li>
+              <li>Log in to your OraMAIL account and open your Server.</li>
               <li>Go to <span className="font-medium text-foreground">Message Streams → Inbound</span>.</li>
               <li>Paste the webhook URL above into the <span className="font-medium text-foreground">Webhook URL</span> field.</li>
-              <li>Save. Postmark will forward all received emails to this endpoint.</li>
+              <li>Save. OraMAIL will forward all received emails to this endpoint.</li>
             </ol>
           </div>
           <p className="text-xs text-muted-foreground">{data?.inbound.note}</p>
@@ -211,11 +211,11 @@ export default function Settings() {
         <CardContent>
           <div className="space-y-3 text-sm">
             {[
-              { type: "TXT", name: "@", value: "v=spf1 include:spf.mtasv.net ~all", purpose: "SPF — authorize Postmark to send from your domain" },
-              { type: "TXT", name: "pm._domainkey", value: "<DKIM key from Postmark dashboard>", purpose: "DKIM — domain key signing (get value from Postmark)" },
+              { type: "TXT", name: "@", value: "v=spf1 include:spf.mtasv.net ~all", purpose: "SPF — authorize OraMAIL to send from your domain" },
+              { type: "TXT", name: "pm._domainkey", value: "<DKIM key from OraMAIL dashboard>", purpose: "DKIM — domain key signing (get value from OraMAIL)" },
               { type: "CNAME", name: "pm-bounces", value: "pm.mtasv.net", purpose: "Return-Path — bounce tracking" },
               { type: "TXT", name: "_dmarc", value: "v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com", purpose: "DMARC — email authentication policy" },
-              { type: "MX", name: "inbound", value: "inbound.postmarkapp.com (priority 10)", purpose: "Inbound MX — receive emails via Postmark" },
+              { type: "MX", name: "inbound", value: "inbound.postmarkapp.com (priority 10)", purpose: "Inbound MX — receive emails via OraMAIL" },
             ].map((record) => (
               <div key={record.name} className="rounded-md border p-3 space-y-1.5">
                 <div className="flex items-center gap-2">

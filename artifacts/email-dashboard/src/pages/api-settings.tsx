@@ -135,7 +135,7 @@ const ENDPOINT_DOCS = [
   { method: "POST",   path: "/api/emails",             description: "Send a new email" },
   { method: "GET",    path: "/api/emails/:id",         description: "Get email detail" },
   { method: "GET",    path: "/api/inbound",            description: "List received emails" },
-  { method: "POST",   path: "/api/inbound/webhook",    description: "Inbound webhook (Postmark)" },
+  { method: "POST",   path: "/api/inbound/webhook",    description: "Inbound webhook (OraMAIL)" },
   { method: "GET",    path: "/api/templates",          description: "List templates" },
   { method: "POST",   path: "/api/templates",          description: "Create template" },
   { method: "PUT",    path: "/api/templates/:id",      description: "Update template" },

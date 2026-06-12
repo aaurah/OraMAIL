@@ -137,7 +137,7 @@ function LandingPage() {
             <span className="text-primary">under control</span>
           </h1>
           <p className="text-lg text-muted-foreground">
-            Send, receive, track, and analyze every email your platform delivers. Powered by Postmark.
+            Send, receive, track, and analyze every email your platform delivers. Powered by OraMAIL.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4">

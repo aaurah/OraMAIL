@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { emailsTable, activityTable } from "@workspace/db";
 import { eq, desc, ilike, or, sql } from "drizzle-orm";
 import { SendEmailBody, ListEmailsQueryParams, GetEmailParams } from "@workspace/api-zod";
-import { getPostmarkClient, isPostmarkConfigured } from "../lib/postmark";
+import { getEmailClient, isEmailConfigured } from "../lib/postmark";
 
 const router = Router();
 
@@ -77,9 +77,9 @@ router.post("/emails", async (req, res) => {
   let sentStatus: "sent" | "queued" = "queued";
   let messageId: string | null = null;
 
-  if (isPostmarkConfigured()) {
+  if (isEmailConfigured()) {
     try {
-      const client = getPostmarkClient();
+      const client = getEmailClient();
       const result = await client.sendEmail({
         From: body.from,
         To: body.to,
@@ -93,7 +93,7 @@ router.post("/emails", async (req, res) => {
       sentStatus = "sent";
       messageId = result.MessageID;
     } catch (err) {
-      req.log.error({ err }, "Postmark send failed");
+      req.log.error({ err }, "Email send failed");
     }
   }
 
