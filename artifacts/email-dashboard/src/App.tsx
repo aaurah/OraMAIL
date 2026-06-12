@@ -115,7 +115,7 @@ function LandingPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
             <Command className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-semibold tracking-tight">Postmaster</span>
+          <span className="font-semibold tracking-tight">OraMAIL</span>
         </div>
         <div className="ml-auto flex items-center gap-3">
           <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={() => setLocation("/sign-in")}>
@@ -220,8 +220,8 @@ function AppRoutes() {
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}
       localization={{
-        signIn: { start: { title: "Welcome back to Postmaster", subtitle: "Sign in to your account" } },
-        signUp: { start: { title: "Create your Postmaster account", subtitle: "Get started in seconds" } },
+        signIn: { start: { title: "Welcome back to OraMAIL", subtitle: "Sign in to your account" } },
+        signUp: { start: { title: "Create your OraMAIL account", subtitle: "Get started in seconds" } },
       }}
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
