@@ -85,7 +85,7 @@ router.get("/stats/bounces", async (_req, res) => {
 
   res.json({
     hardBounces: Number(stats?.hard ?? 0),
-    softBounces: 0,
+    softBounces: Number(stats?.spam ?? 0),
     spamComplaints: Number(stats?.spam ?? 0),
     unsubscribes: Number(stats?.unsubscribed ?? 0),
   });

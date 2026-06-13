@@ -18,7 +18,8 @@ import Suppressions from "@/pages/suppressions";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 import { Button } from "@/components/ui/button";
-import { Command, Mail, Send, BarChart3 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Command, Mail, Send, BarChart3, Inbox, LayoutTemplate, Globe, ShieldCheck, Zap, Key } from "lucide-react";
 import React from "react";
 
 const queryClient = new QueryClient();
@@ -106,54 +107,123 @@ function SignUpPage() {
   );
 }
 
+const FEATURES = [
+  { icon: Send, title: "Outbound Sending", desc: "Send transactional emails via any SMTP provider — Gmail, SendGrid, AWS SES, or your own server." },
+  { icon: Inbox, title: "Inbound Routing", desc: "Receive, parse, and store incoming email via webhook. Full message body, headers, and attachments." },
+  { icon: BarChart3, title: "Delivery Analytics", desc: "Track open rates, click-throughs, bounces, and spam complaints in real time." },
+  { icon: LayoutTemplate, title: "Email Templates", desc: "Create reusable HTML + text templates. Pick from compose and auto-populate subject and body." },
+  { icon: Globe, title: "Domain Management", desc: "Manage sender domains with one-click SPF, DKIM, DMARC, and MX record guidance." },
+  { icon: ShieldCheck, title: "Suppression Lists", desc: "Auto-suppress bounced and spam-flagged addresses. Add manual suppressions instantly." },
+  { icon: Key, title: "API Key Management", desc: "Generate secure API keys with one-time reveal. Revoke access instantly from the dashboard." },
+  { icon: Zap, title: "Provider-Agnostic SMTP", desc: "Configure any SMTP endpoint from the settings panel — no vendor lock-in, ever." },
+];
+
 function LandingPage() {
   const [, setLocation] = useLocation();
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
-      <header className="flex h-16 items-center px-6 border-b border-border">
+      {/* Nav */}
+      <header className="sticky top-0 z-10 flex h-16 items-center px-6 border-b border-border bg-background/80 backdrop-blur">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
             <Command className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-semibold tracking-tight">OraMAIL</span>
+          <span className="font-bold tracking-tight text-lg">OraMAIL</span>
+          <Badge variant="secondary" className="text-xs ml-1">Beta</Badge>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={() => setLocation("/sign-in")}>
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => setLocation("/sign-in")}>
             Sign In
           </Button>
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setLocation("/sign-up")}>
-            Get Started
+          <Button size="sm" onClick={() => setLocation("/sign-up")}>
+            Get Started Free
           </Button>
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-6 text-center gap-8">
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/20 border border-primary/30">
-          <Mail className="h-10 w-10 text-primary" />
+      {/* Hero */}
+      <section className="flex flex-col items-center justify-center text-center px-6 py-24 gap-8 relative overflow-hidden">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.12),transparent_70%)]" />
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/20 border border-primary/30 shadow-lg">
+          <Mail className="h-8 w-8 text-primary" />
         </div>
-        <div className="max-w-2xl space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+        <div className="max-w-3xl space-y-5">
+          <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight leading-tight">
             Transactional email,{" "}
-            <span className="text-primary">under control</span>
+            <span className="text-primary">finally yours</span>
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Send, receive, track, and analyze every email your platform delivers. Powered by OraMAIL.
+          <p className="text-xl text-muted-foreground max-w-xl mx-auto">
+            Send, receive, track, and analyze every email your platform delivers —
+            with full control, zero vendor lock-in, and a beautiful dashboard.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8" onClick={() => setLocation("/sign-up")}>
-            Get Started Free
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button size="lg" className="px-10 text-base font-semibold shadow-md" onClick={() => setLocation("/sign-up")}>
+            Start Free
           </Button>
-          <Button size="lg" variant="outline" className="px-8" onClick={() => setLocation("/sign-in")}>
+          <Button size="lg" variant="outline" className="px-10 text-base" onClick={() => setLocation("/sign-in")}>
             Sign In
           </Button>
         </div>
-        <div className="flex flex-wrap justify-center gap-8 text-sm text-muted-foreground/60 pt-4">
-          <div className="flex items-center gap-2"><Send className="h-4 w-4" /> Outbound emails</div>
-          <div className="flex items-center gap-2"><Mail className="h-4 w-4" /> Inbound routing</div>
-          <div className="flex items-center gap-2"><BarChart3 className="h-4 w-4" /> Delivery analytics</div>
+        <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+          {["Any SMTP provider", "Real-time analytics", "API-first", "Open tracking"].map(t => (
+            <span key={t} className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary inline-block" />{t}
+            </span>
+          ))}
         </div>
-      </main>
+      </section>
+
+      {/* Features grid */}
+      <section className="px-6 py-16 bg-muted/30 border-y border-border">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-10">Everything you need to deliver email at scale</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {FEATURES.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="rounded-xl border bg-card p-5 space-y-3 hover:border-primary/40 transition-colors">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Icon className="h-4 w-4 text-primary" />
+                </div>
+                <h3 className="font-semibold text-sm">{title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="px-6 py-16 max-w-4xl mx-auto w-full">
+        <h2 className="text-2xl font-bold text-center mb-10">Up and running in minutes</h2>
+        <div className="grid sm:grid-cols-3 gap-8">
+          {[
+            { step: "01", title: "Connect your SMTP", desc: "Enter any SMTP credentials — or use the default OraMAIL relay. No lock-in." },
+            { step: "02", title: "Verify your domain", desc: "Add SPF, DKIM, and DMARC records with our guided DNS setup." },
+            { step: "03", title: "Send & analyze", desc: "Start sending emails and watch opens, clicks, and bounces in real time." },
+          ].map(({ step, title, desc }) => (
+            <div key={step} className="flex flex-col gap-3">
+              <span className="text-4xl font-black text-primary/20 leading-none">{step}</span>
+              <h3 className="font-semibold">{title}</h3>
+              <p className="text-sm text-muted-foreground">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="px-6 py-16 border-t border-border bg-muted/20 text-center">
+        <div className="max-w-xl mx-auto space-y-6">
+          <h2 className="text-3xl font-bold">Ready to take control?</h2>
+          <p className="text-muted-foreground">Join teams delivering millions of emails with OraMAIL.</p>
+          <Button size="lg" className="px-12 text-base font-semibold" onClick={() => setLocation("/sign-up")}>
+            Create Free Account
+          </Button>
+        </div>
+      </section>
+
+      <footer className="border-t border-border px-6 py-6 text-center text-xs text-muted-foreground">
+        © {new Date().getFullYear()} OraMAIL · Transactional email infrastructure
+      </footer>
     </div>
   );
 }
