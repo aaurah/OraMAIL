@@ -7,13 +7,26 @@ export const adminSettingsTable = pgTable("admin_settings", {
 });
 
 export const DEFAULT_ADMIN_SETTINGS: Record<string, string> = {
-  rate_limit_per_minute: "100",
-  max_recipients_per_email: "50",
-  webhook_max_retries: "3",
-  webhook_timeout_seconds: "30",
-  bounce_auto_suppress_threshold: "5",
-  inbound_enabled: "true",
+  // Sending controls
   sending_enabled: "true",
   track_opens: "true",
   track_links: "true",
+  // Rate limits
+  rate_limit_per_minute: "100",
+  max_recipients_per_email: "50",
+  // Bounce handling
+  bounce_auto_suppress_threshold: "5",
+  // Inbound
+  inbound_enabled: "true",
+  // Webhook retry
+  webhook_max_retries: "3",
+  webhook_timeout_seconds: "30",
+  // SMTP configuration (provider-agnostic)
+  smtp_host: "smtp.postmarkapp.com",
+  smtp_port: "587",
+  smtp_secure: "false",
+  smtp_user: "",
+  smtp_pass: "",
+  smtp_from_name: "OraMAIL",
+  smtp_from_email: "",
 };

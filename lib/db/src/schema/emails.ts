@@ -3,13 +3,17 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 export const emailStatusEnum = pgEnum("email_status", [
-  "queued", "sent", "bounced", "opened", "clicked", "spam", "unsubscribed"
+  "queued", "sent", "failed", "bounced", "opened", "clicked", "spam", "unsubscribed"
 ]);
 
 export const emailsTable = pgTable("emails", {
   id: serial("id").primaryKey(),
   from: text("from").notNull(),
+  fromName: text("from_name"),
   to: text("to").notNull(),
+  cc: text("cc"),
+  bcc: text("bcc"),
+  replyTo: text("reply_to"),
   subject: text("subject").notNull(),
   htmlBody: text("html_body"),
   textBody: text("text_body"),
@@ -17,6 +21,8 @@ export const emailsTable = pgTable("emails", {
   opens: integer("opens").notNull().default(0),
   clicks: integer("clicks").notNull().default(0),
   messageId: text("message_id"),
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").notNull().default(0),
   templateId: integer("template_id"),
   tag: text("tag"),
   trackOpens: boolean("track_opens").notNull().default(true),

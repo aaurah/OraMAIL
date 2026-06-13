@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { adminSettingsTable, DEFAULT_ADMIN_SETTINGS } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { testSmtpConnection } from "../lib/postmark";
 
 const router = Router();
 
@@ -66,6 +67,11 @@ router.get("/admin/stats", async (req, res) => {
     domains: Number(domainCount?.count ?? 0),
     activeApiKeys: Number(apiKeyCount?.count ?? 0),
   });
+});
+
+router.post("/admin/test-smtp", async (_req, res) => {
+  const result = await testSmtpConnection();
+  res.json(result);
 });
 
 export default router;

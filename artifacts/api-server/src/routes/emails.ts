@@ -1,25 +1,40 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { emailsTable, activityTable } from "@workspace/db";
-import { eq, desc, ilike, or, sql } from "drizzle-orm";
-import { SendEmailBody, ListEmailsQueryParams, GetEmailParams } from "@workspace/api-zod";
-import { getEmailClient, isEmailConfigured } from "../lib/postmark";
+import { emailsTable, activityTable, templatesTable } from "@workspace/db";
+import { eq, desc, ilike, or, sql, and } from "drizzle-orm";
+import { z } from "zod";
+import { sendEmailViaSMTP, isEmailConfigured } from "../lib/postmark";
 
 const router = Router();
 
+const SendBody = z.object({
+  from: z.string().email(),
+  fromName: z.string().optional(),
+  to: z.string(),
+  cc: z.string().optional(),
+  bcc: z.string().optional(),
+  replyTo: z.string().optional(),
+  subject: z.string().min(1),
+  htmlBody: z.string().optional(),
+  textBody: z.string().optional(),
+  templateId: z.coerce.number().int().optional(),
+  tag: z.string().optional(),
+  trackOpens: z.boolean().default(true),
+  trackLinks: z.boolean().default(true),
+});
+
 router.get("/emails", async (req, res) => {
-  const query = ListEmailsQueryParams.parse(req.query);
-  const page = query.page ?? 1;
-  const limit = query.limit ?? 20;
+  const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
+  const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? "20"), 10)));
   const offset = (page - 1) * limit;
 
   let whereClause = undefined as ReturnType<typeof eq> | undefined;
 
-  if (query.status) {
-    whereClause = eq(emailsTable.status, query.status as typeof emailsTable.status._.data);
+  if (req.query.status) {
+    whereClause = eq(emailsTable.status, req.query.status as typeof emailsTable.status._.data);
   }
-  if (query.search) {
-    const search = `%${query.search}%`;
+  if (req.query.search) {
+    const search = `%${req.query.search}%`;
     whereClause = or(
       ilike(emailsTable.to, search),
       ilike(emailsTable.from, search),
@@ -28,114 +43,154 @@ router.get("/emails", async (req, res) => {
   }
 
   const [emails, countResult] = await Promise.all([
-    db
-      .select()
-      .from(emailsTable)
-      .where(whereClause)
-      .orderBy(desc(emailsTable.createdAt))
-      .limit(limit)
-      .offset(offset),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(emailsTable)
-      .where(whereClause),
+    db.select().from(emailsTable).where(whereClause).orderBy(desc(emailsTable.createdAt)).limit(limit).offset(offset),
+    db.select({ count: sql<number>`count(*)` }).from(emailsTable).where(whereClause),
   ]);
 
-  const total = Number(countResult[0]?.count ?? 0);
-
   res.json({
-    emails: emails.map((e) => ({
-      ...e,
-      createdAt: e.createdAt.toISOString(),
-      sentAt: e.sentAt?.toISOString() ?? null,
-    })),
-    total,
+    emails: emails.map((e) => ({ ...e, createdAt: e.createdAt.toISOString(), sentAt: e.sentAt?.toISOString() ?? null })),
+    total: Number(countResult[0]?.count ?? 0),
     page,
     limit,
   });
 });
 
 router.post("/emails", async (req, res) => {
-  const body = SendEmailBody.parse(req.body);
+  const body = SendBody.parse(req.body);
 
-  const [email] = await db
-    .insert(emailsTable)
-    .values({
-      from: body.from,
-      to: body.to,
-      subject: body.subject,
-      htmlBody: body.htmlBody,
-      textBody: body.textBody,
-      templateId: body.templateId,
-      tag: body.tag,
-      trackOpens: body.trackOpens ?? true,
-      trackLinks: body.trackLinks ?? true,
-      status: "queued",
-    })
-    .returning();
+  const [email] = await db.insert(emailsTable).values({
+    from: body.from,
+    fromName: body.fromName ?? null,
+    to: body.to,
+    cc: body.cc ?? null,
+    bcc: body.bcc ?? null,
+    replyTo: body.replyTo ?? null,
+    subject: body.subject,
+    htmlBody: body.htmlBody ?? null,
+    textBody: body.textBody ?? null,
+    templateId: body.templateId ?? null,
+    tag: body.tag ?? null,
+    trackOpens: body.trackOpens,
+    trackLinks: body.trackLinks,
+    status: "queued",
+  }).returning();
 
-  let sentStatus: "sent" | "queued" = "queued";
+  let sentStatus: "sent" | "queued" | "failed" = "queued";
   let messageId: string | null = null;
+  let errorMessage: string | null = null;
 
-  if (isEmailConfigured()) {
+  if (await isEmailConfigured()) {
     try {
-      const client = getEmailClient();
-      const result = await client.sendEmail({
-        From: body.from,
-        To: body.to,
-        Subject: body.subject,
-        HtmlBody: body.htmlBody,
-        TextBody: body.textBody,
-        Tag: body.tag,
-        TrackOpens: body.trackOpens ?? true,
-        TrackLinks: (body.trackLinks ? "HtmlAndText" : "None") as unknown as import("postmark/dist/client/models/message/SupportingTypes.js").LinkTrackingOptions,
+      let html = body.htmlBody ?? null;
+      let text = body.textBody ?? null;
+
+      if (body.templateId) {
+        const [tpl] = await db.select().from(templatesTable).where(eq(templatesTable.id, body.templateId));
+        if (tpl) {
+          html = tpl.htmlBody ?? html;
+          text = tpl.textBody ?? text;
+        }
+      }
+
+      const result = await sendEmailViaSMTP({
+        from: body.from,
+        fromName: body.fromName,
+        to: body.to,
+        cc: body.cc,
+        bcc: body.bcc,
+        replyTo: body.replyTo,
+        subject: body.subject,
+        html,
+        text,
       });
       sentStatus = "sent";
-      messageId = result.MessageID;
+      messageId = result.messageId;
     } catch (err) {
+      sentStatus = "failed";
+      errorMessage = err instanceof Error ? err.message : String(err);
       req.log.error({ err }, "Email send failed");
     }
   }
 
-  const [updated] = await db
-    .update(emailsTable)
-    .set({
-      status: sentStatus,
-      sentAt: sentStatus === "sent" ? new Date() : null,
-      messageId,
-    })
-    .where(eq(emailsTable.id, email.id))
-    .returning();
+  const [updated] = await db.update(emailsTable).set({
+    status: sentStatus,
+    sentAt: sentStatus === "sent" ? new Date() : null,
+    messageId,
+    errorMessage,
+  }).where(eq(emailsTable.id, email.id)).returning();
+
+  if (body.templateId) {
+    await db.update(templatesTable)
+      .set({ usageCount: sql`${templatesTable.usageCount} + 1`, updatedAt: new Date() })
+      .where(eq(templatesTable.id, body.templateId));
+  }
 
   await db.insert(activityTable).values({
-    type: sentStatus === "sent" ? "sent" : "sent",
+    type: sentStatus === "sent" ? "sent" : "bounced",
     email: body.to,
     subject: body.subject,
-    description: `Email ${sentStatus === "sent" ? "sent" : "queued"} to ${body.to}`,
+    description: sentStatus === "sent"
+      ? `Email sent to ${body.to}`
+      : sentStatus === "failed"
+      ? `Email failed for ${body.to}: ${errorMessage}`
+      : `Email queued for ${body.to}`,
   });
 
-  res.status(201).json({
-    ...updated,
-    createdAt: updated.createdAt.toISOString(),
-    sentAt: updated.sentAt?.toISOString() ?? null,
-  });
+  res.status(201).json({ ...updated, createdAt: updated.createdAt.toISOString(), sentAt: updated.sentAt?.toISOString() ?? null });
+});
+
+router.post("/emails/:id/resend", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [email] = await db.select().from(emailsTable).where(eq(emailsTable.id, id));
+  if (!email) { res.status(404).json({ error: "Email not found" }); return; }
+
+  let sentStatus: "sent" | "queued" | "failed" = "queued";
+  let messageId: string | null = email.messageId;
+  let errorMessage: string | null = null;
+
+  if (await isEmailConfigured()) {
+    try {
+      const result = await sendEmailViaSMTP({
+        from: email.from,
+        fromName: email.fromName,
+        to: email.to,
+        cc: email.cc,
+        bcc: email.bcc,
+        replyTo: email.replyTo,
+        subject: email.subject,
+        html: email.htmlBody,
+        text: email.textBody,
+      });
+      sentStatus = "sent";
+      messageId = result.messageId;
+    } catch (err) {
+      sentStatus = "failed";
+      errorMessage = err instanceof Error ? err.message : String(err);
+      req.log.error({ err }, "Email resend failed");
+    }
+  }
+
+  const [updated] = await db.update(emailsTable).set({
+    status: sentStatus,
+    sentAt: sentStatus === "sent" ? new Date() : email.sentAt,
+    messageId,
+    errorMessage,
+    retryCount: sql`${emailsTable.retryCount} + 1`,
+  }).where(eq(emailsTable.id, id)).returning();
+
+  res.json({ ...updated, createdAt: updated.createdAt.toISOString(), sentAt: updated.sentAt?.toISOString() ?? null });
 });
 
 router.get("/emails/:id", async (req, res) => {
-  const { id } = GetEmailParams.parse(req.params);
-  const email = await db.select().from(emailsTable).where(eq(emailsTable.id, id)).limit(1);
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  if (!email[0]) {
-    res.status(404).json({ error: "Email not found" });
-    return;
-  }
+  const [email] = await db.select().from(emailsTable).where(eq(emailsTable.id, id));
+  if (!email) { res.status(404).json({ error: "Email not found" }); return; }
 
-  const e = email[0];
-  res.json({
-    ...e,
-    createdAt: e.createdAt.toISOString(),
-    sentAt: e.sentAt?.toISOString() ?? null,
-  });
+  res.json({ ...email, createdAt: email.createdAt.toISOString(), sentAt: email.sentAt?.toISOString() ?? null });
 });
 
 export default router;
